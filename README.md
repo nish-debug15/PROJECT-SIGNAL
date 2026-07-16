@@ -68,7 +68,7 @@ Next.js dashboard with two panels:
 - **Agents:** `google/adk-python` 2.0 (Workflow + Task API), Gemini 2.5 Pro / Flash
 - **Tool layer:** MCP server, FastAPI
 - **Data:** BMTC GTFS feed (real) + synthetic incident generator (simulated)
-- **Frontend:** Next.js, Mapbox/Leaflet, WebSocket for live agent trace
+- **Frontend:** Next.js, Leaflet (OpenStreetMap tiles), WebSocket for live agent trace
 - **Deploy:** Cloud Run (backend), Vercel (frontend)
 
 ## Repo Structure
@@ -132,8 +132,9 @@ If it doesn't appear in the 4-minute demo, it doesn't get built.
 
 ## Team
 
-- [Your name] — agents, MCP server, backend
-- [Teammate name] — frontend, dashboard, deploy
+- Nishit Patel — agents, MCP server, backend
+- Vanshaj Garg — frontend, dashboard, deploy
+- Jaineesh Patel — MCP server, data, deploy
 
 ## Roadmap (post-hackathon)
 
