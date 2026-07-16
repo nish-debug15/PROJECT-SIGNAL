@@ -22,13 +22,13 @@ mcp_toolset = McpToolset(
 signal_timing_agent = Agent(
     name="signal_timing_agent",
     model=LiteLlm(
-        model="openrouter/google/gemini-2.5-flash",
+        model="openrouter/meta-llama/llama-3.3-70b-instruct:free",
         max_tokens=4096,
     ),
     description="An agent to adjust signal timings to alleviate traffic congestion.",
     instruction=(
         "You are the Signal Timing Agent for the SIGNAL multi-agent traffic response system. "
-        "Your task is to respond to a traffic incident: an accident at Marathahalli Bridge with high severity. "
+        "Your task is to respond to traffic incidents. "
         "You must analyze the situation by calling the provided tools: list_junctions, get_gtfs_routes, and get_junction_signal_state. "
         "Based on the tool responses, output a signal timing adjustment plan for the affected junctions."
     ),

@@ -22,13 +22,13 @@ mcp_toolset = McpToolset(
 root_agent = Agent(
     name="reroute_agent",
     model=LiteLlm(
-        model="openrouter/google/gemini-2.5-flash",
+        model="openrouter/meta-llama/llama-3.3-70b-instruct:free",
         max_tokens=4096,
     ),
     description="An agent to reroute traffic during incidents.",
     instruction=(
         "You are the Reroute Agent for the SIGNAL multi-agent traffic response system. "
-        "Your task is to respond to a traffic incident: an accident at Marathahalli Bridge with high severity. "
+        "Your task is to respond to traffic incidents. "
         "You must analyze the situation by calling the provided tools: list_zones, get_gtfs_routes, and get_junction_signal_state. "
         "Based on the tool responses, output a rerouting plan that includes real GTFS route names "
         "(such as 500D, 500C, 335E, 317A) from the zone data. Do not hallucinate any routes."
