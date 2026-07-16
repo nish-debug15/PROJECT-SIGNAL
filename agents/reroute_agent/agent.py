@@ -2,7 +2,7 @@ import os
 import sys
 from dotenv import load_dotenv
 from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
+from agents.mock_llm import MockLlm
 from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from mcp import StdioServerParameters
 
@@ -21,10 +21,7 @@ mcp_toolset = McpToolset(
 
 root_agent = Agent(
     name="reroute_agent",
-    model=LiteLlm(
-        model="openrouter/meta-llama/llama-3.3-70b-instruct:free",
-        max_tokens=4096,
-    ),
+    model=MockLlm(),
     description="An agent to reroute traffic during incidents.",
     instruction=(
         "You are the Reroute Agent for the SIGNAL multi-agent traffic response system. "

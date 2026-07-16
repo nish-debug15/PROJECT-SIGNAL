@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from google.genai import types
 from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
+from agents.mock_llm import MockLlm
 from google.adk.agents.parallel_agent import ParallelAgent
 from google.adk.agents.sequential_agent import SequentialAgent
 from google.adk.runners import Runner
@@ -30,10 +30,7 @@ parallel_execution_agent = ParallelAgent(
 # Step 2: Coordinator LLM Agent
 coordinator_llm_agent = Agent(
     name="coordinator_llm",
-    model=LiteLlm(
-        model="openrouter/meta-llama/llama-3.3-70b-instruct:free",
-        max_tokens=4096,
-    ),
+    model=MockLlm(),
     description="Coordinator agent to merge outputs from Reroute and Signal-Timing agents.",
     instruction=(
         "You are the Coordinator Agent for the SIGNAL multi-agent traffic response system. "
