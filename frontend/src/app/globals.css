@@ -1,0 +1,156 @@
+:root {
+  --bg-main: #0F1115;
+  --bg-panel: #1A1D24;
+  --border-color: #374151;
+  
+  --text-primary: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  
+  --color-reject: #EF4444;
+  --color-reject-bg: rgba(239, 68, 68, 0.1);
+  --color-approve: #10B981;
+  --color-approve-bg: rgba(16, 185, 129, 0.1);
+  --color-pending: #F59E0B;
+  --color-pending-bg: rgba(245, 158, 11, 0.1);
+  --color-active: #3B82F6;
+  --color-active-bg: rgba(59, 130, 246, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-inter), sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+.mono {
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+/* Layout Grid */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Trace Panel Styles */
+.trace-panel {
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.trace-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.trace-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trace-entry {
+  border: 1px solid var(--border-color);
+  padding: 12px 16px;
+  background-color: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+/* State Accents */
+.trace-entry.state-reject {
+  border-left: 4px solid var(--color-reject);
+  background-color: var(--color-reject-bg);
+}
+
+.trace-entry.state-approve {
+  border-left: 4px solid var(--color-approve);
+  background-color: var(--color-approve-bg);
+}
+
+.trace-entry.state-retry {
+  border-left: 4px solid var(--color-pending);
+  background-color: var(--color-pending-bg);
+}
+
+.trace-entry.state-active {
+  border-left: 4px solid var(--color-active);
+  background-color: var(--color-active-bg);
+}
+
+.trace-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.trace-agent-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trace-timestamp {
+  color: var(--text-tertiary);
+}
+
+.trace-content {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.trace-status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
+.badge-reject { color: var(--color-reject); border: 1px solid var(--color-reject); }
+.badge-approve { color: var(--color-approve); border: 1px solid var(--color-approve); }
+.badge-retry { color: var(--color-pending); border: 1px solid var(--color-pending); }
+.badge-active { color: var(--color-active); border: 1px solid var(--color-active); }
+
+/* Map Area Styles */
+.map-container {
+  height: 100vh;
+  width: 100%;
+  background-color: #000;
+}
