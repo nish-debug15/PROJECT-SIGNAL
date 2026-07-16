@@ -20,9 +20,17 @@ out/
 .idea/
 *.swp
 
+# ADK session data
+.adk/
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Temp/scratch
+*.log
+payload.json
+test_api.py
 
 # GTFS data (large, not committed)
 mcp_server/data/*.zip
