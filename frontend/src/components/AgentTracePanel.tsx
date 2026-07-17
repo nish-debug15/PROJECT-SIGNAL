@@ -23,9 +23,9 @@ export default function AgentTracePanel() {
   }, [traceStream]);
 
   useEffect(() => {
-    // Determine WebSocket URL based on current host if not strictly localhost, 
-    // but the backend is fixed at 8080 according to api/main.py
-    const ws = new WebSocket('ws://localhost:8080/ws/logs');
+    // Determine WebSocket URL based on env (Vercel) or fallback to localhost
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080/ws/logs';
+    const ws = new WebSocket(wsUrl);
 
     const processQueue = async () => {
       if (isProcessingRef.current) return;
