@@ -116,7 +116,7 @@ Environment variables needed: `GEMINI_API_KEY`, `MCP_SERVER_URL`.
 ## Demo Script (4 minutes)
 
 1. **[0:00–0:30]** Problem framing — one slide, no more
-2. **[0:30–1:30]** Inject a real incident live (e.g. accident near Marathahalli ORR) — show coordinator delegating to reroute + signal-timing agents in parallel via the trace panel
+2. **[0:30–1:30]** Inject a real incident live (e.g. Waterlogging at Koramangala Water Tank Junction) — show coordinator delegating to reroute + signal-timing agents in parallel via the trace panel
 3. **[1:30–2:30]** Show verifier catching a second-order bottleneck and rejecting the first plan — this is the moment, let it breathe
 4. **[2:30–3:15]** Show corrected plan getting approved and pushed to the map
 5. **[3:15–4:00]** Architecture recap + what's next (real sensor integration, multi-city)
