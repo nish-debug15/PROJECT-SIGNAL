@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -55,6 +55,9 @@ export default function MapView() {
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#EF4444', border: '2px solid #fff', marginRight: 8 }}></div> Incident
         </div>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.2)', border: '2px solid rgba(239, 68, 68, 0.5)', marginRight: 8 }}></div> Impact Zone
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#3B82F6', border: '2px solid #fff', marginRight: 8 }}></div> Junction
         </div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -75,7 +78,9 @@ export default function MapView() {
           radius={2500}
           pathOptions={{ color: '#EF4444', fillColor: '#EF4444', fillOpacity: 0.1, weight: 1, dashArray: '4' }}
         >
-          <Popup className="mono">Primary Impact Zone</Popup>
+          <Tooltip direction="top" offset={[0, -20]} opacity={0.9} permanent className="mono">
+            Primary Impact Zone
+          </Tooltip>
         </Circle>
 
         {/* Reroute Path */}
