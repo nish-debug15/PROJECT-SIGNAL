@@ -50,18 +50,19 @@ graph TD
 
 Built on **ADK 2.0** Workflow runtime (graph-based execution) + Collaborative Workflows API for delegation.
 
-### MCP Server
+### MCP Server & Backend API
 
-A FastAPI-based MCP server exposes traffic data as tools rather than hardcoded API glue:
-- `get_gtfs_routes(zone)` — BMTC GTFS feed lookup
-- `get_junction_signal_state(junction_id)`
-- `inject_incident(location, type, severity)` — for the synthetic incident generator used in the demo (no live sensor access in 18 days, so incidents are simulated but agent logic is real)
+- **Backend API (`api/main.py`)**: A FastAPI server that handles the WebSocket connection for the live agent trace (`/ws/logs`) and the incident trigger endpoint (`/api/incident`).
+- **MCP Server (`mcp_server/main.py`)**: Exposes traffic data as tools to the agents over Stdio.
+  - `get_gtfs_routes(zone)` — BMTC GTFS feed lookup
+  - `get_junction_signal_state(junction_id)`
+  - `inject_incident(location, type, severity)` — synthetic incident generator for the demo.
 
 ### Frontend
 
 Next.js dashboard with two panels:
-- **Map view** — incident location, proposed reroutes, affected junctions
-- **Agent trace panel** — live websocket stream showing every agent call, its output, and any verifier rejection + retry. This panel is what sells the demo, not the map.
+- **Map view** — static visual representation of the incident location, proposed reroutes, and affected junctions.
+- **Agent trace panel** — live websocket stream showing every agent call, its output, and the verifier's rejection + retry loop. This panel is what sells the demo.
 
 ## Tech Stack
 
@@ -73,45 +74,29 @@ Next.js dashboard with two panels:
 
 ## Repo Structure
 
-```
+```text
 signal/
 ├── agents/
-│   ├── coordinator.py
-│   ├── reroute_agent.py
-│   ├── signal_timing_agent.py
-│   ├── verifier_agent.py
-│   └── graph.py              # ADK Workflow graph definition
+│   ├── coordinator/
+│   ├── reroute_agent/
+│   ├── signal_timing_agent/
+│   └── verifier/
+├── api/
+│   └── main.py               # FastAPI backend (WebSocket trace, Trigger endpoint)
 ├── mcp_server/
-│   ├── main.py
+│   ├── main.py               # Stdio MCP server for data tools
 │   ├── tools/
-│   │   ├── gtfs.py
-│   │   ├── signals.py
-│   │   └── incidents.py
 │   └── data/                 # cached GTFS snapshot
 ├── frontend/
 │   ├── app/
 │   ├── components/
 │   │   ├── MapView.tsx
 │   │   └── AgentTracePanel.tsx
-│   └── lib/websocket.ts
+│   └── lib/
 ├── demo/
 │   └── incident_script.json  # scripted incident for live demo
 └── README.md
 ```
-
-## Setup
-
-```bash
-# Backend
-cd mcp_server && pip install -r requirements.txt
-cd ../agents && pip install google-adk
-adk web ./agents   # local dev UI to inspect agent execution
-
-# Frontend
-cd frontend && npm install && npm run dev
-```
-
-Environment variables needed: `GEMINI_API_KEY`, `MCP_SERVER_URL`.
 
 ## Demo Script (4 minutes)
 
@@ -120,24 +105,3 @@ Environment variables needed: `GEMINI_API_KEY`, `MCP_SERVER_URL`.
 3. **[1:30–2:30]** Show verifier catching a second-order bottleneck and rejecting the first plan — this is the moment, let it breathe
 4. **[2:30–3:15]** Show corrected plan getting approved and pushed to the map
 5. **[3:15–4:00]** Architecture recap + what's next (real sensor integration, multi-city)
-
-## Cut List (explicitly out of scope for 18 days)
-
-- Auth / multi-user
-- Multi-city support
-- Real sensor hardware integration
-- Any UI polish beyond the trace panel and map
-
-If it doesn't appear in the 4-minute demo, it doesn't get built.
-
-## Team
-
-- Nishit Patel — agents, MCP server, backend
-- Vanshaj Garg — frontend, dashboard, deploy
-- Jaineesh Patel — MCP server, data, deploy
-
-## Roadmap (post-hackathon)
-
-- Live sensor feed integration (replace synthetic incident generator)
-- Multi-junction cascading prediction (graph-based traffic model, not just adjacent-zone check)
-- BBMP/BMTC pilot conversation
