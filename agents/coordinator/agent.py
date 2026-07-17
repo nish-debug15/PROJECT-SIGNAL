@@ -34,7 +34,7 @@ USE_REAL_LLM = False
 
 if USE_REAL_LLM:
     llm_model = LiteLlm(
-        model="openrouter/google/gemini-2.5-flash",
+        model="groq/llama3-70b-8192",
         max_tokens=512,
     )
 else:
