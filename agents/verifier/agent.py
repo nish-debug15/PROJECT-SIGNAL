@@ -5,7 +5,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 from google.adk.agents import Agent
-from agents.mock_llm import MockLlm
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from mcp import StdioServerParameters
 
@@ -29,7 +29,10 @@ mcp_toolset = McpToolset(
 
 verifier_agent = Agent(
     name="verifier_agent",
-    model=MockLlm(),
+    model=LiteLlm(
+        model="openrouter/google/gemini-2.5-flash",
+        max_tokens=512,
+    ),
     description="Verifier agent to check plans against constraints.",
     instruction=(
         "You are the Verifier Agent for the SIGNAL multi-agent traffic response system. "

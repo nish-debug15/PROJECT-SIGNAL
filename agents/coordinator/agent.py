@@ -4,13 +4,16 @@ import asyncio
 import json
 from dotenv import load_dotenv
 
+sys.stdout.reconfigure(encoding='utf-8')
+
 from google.genai import types
 from google.adk.agents import Agent
-from agents.mock_llm import MockLlm
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.agents.parallel_agent import ParallelAgent
 from google.adk.agents.sequential_agent import SequentialAgent
 from google.adk.runners import Runner
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
+from agents.logger import AgentLogger
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -30,7 +33,10 @@ parallel_execution_agent = ParallelAgent(
 # Step 2: Coordinator LLM Agent
 coordinator_llm_agent = Agent(
     name="coordinator_llm",
-    model=MockLlm(),
+    model=LiteLlm(
+        model="openrouter/google/gemini-2.5-flash",
+        max_tokens=512,
+    ),
     description="Coordinator agent to merge outputs from Reroute and Signal-Timing agents.",
     instruction=(
         "You are the Coordinator Agent for the SIGNAL multi-agent traffic response system. "
@@ -51,12 +57,8 @@ coordinator_flow = SequentialAgent(
 
 root_agent = coordinator_flow
 
-async def main():
-    if len(sys.argv) < 2:
-        print("Usage: python agent.py <incident_description>")
-        sys.exit(1)
-        
-    incident_desc = sys.argv[1]
+async def run_incident_response(incident_desc: str):
+    AgentLogger().emit_event("System", "Started Incident Response", incident_desc)
     
     # 1. Initialize ADK Runner and Session
     session_service = InMemorySessionService()
@@ -76,7 +78,7 @@ async def main():
     msg_text = f"New Incident: {incident_desc}"
     
     while current_attempt <= max_retries:
-        print(f"\n=== Attempt {current_attempt} ===")
+        AgentLogger().emit_event("System", f"Attempt {current_attempt}", f"Starting attempt {current_attempt} of {max_retries}")
         
         # We must clear the agent states in the session to ensure the SequentialAgent and its sub-agents run again
         session = await runner.session_service.get_session(app_name="coordinator_app", user_id="cli_user", session_id=session.id)
@@ -86,19 +88,24 @@ async def main():
             del session.state["_adk_end_of_agents"]
         
         # Run Coordinator Flow
-        print("Running Coordinator Flow (Parallel Delegation + Merge)...")
+        AgentLogger().emit_event("Coordinator", "Delegating", "Running Parallel Reroute and Signal-Timing Agents...")
         plan_output = ""
         user_msg = types.Content(role="user", parts=[types.Part.from_text(text=msg_text)])
         
         async for event in runner.run_async(user_id="cli_user", session_id=session.id, new_message=user_msg):
+            if hasattr(event, "model_response") and getattr(event, "model_response", None) and getattr(event.model_response, "usage_metadata", None):
+                md = event.model_response.usage_metadata
+                AgentLogger().log_call(event.author, getattr(md, "prompt_token_count", 0) or 0, getattr(md, "candidates_token_count", 0) or 0)
+            
             if event.content and event.author == "coordinator_llm":
                 if event.content.parts and event.content.parts[0].text:
                     plan_output += event.content.parts[0].text
+                    AgentLogger().emit_event("Coordinator", "Merging", event.content.parts[0].text)
         
-        print(f"\n--- Coordinator Merged Plan ---\n{plan_output}\n-------------------------------\n")
+        AgentLogger().emit_event("Coordinator", "Merged Plan Completed", plan_output)
         
         # Run Verifier
-        print("Running Verifier...")
+        AgentLogger().emit_event("Verifier", "Evaluating", "Running safety checks on the proposed plan...")
         # Since the verifier is a single_turn agent, we can run it isolated using a new Runner and Session to avoid polluting history
         # Or we can run it in the same session, but the output schema returns JSON.
         verifier_runner = Runner(
@@ -112,11 +119,15 @@ async def main():
         
         v_output = ""
         async for event in verifier_runner.run_async(user_id="cli_user", session_id=v_session.id, new_message=verifier_input):
+            if hasattr(event, "model_response") and getattr(event, "model_response", None) and getattr(event.model_response, "usage_metadata", None):
+                md = event.model_response.usage_metadata
+                AgentLogger().log_call(event.author, getattr(md, "prompt_token_count", 0) or 0, getattr(md, "candidates_token_count", 0) or 0)
+            
             if event.content and event.author == "verifier_agent":
                 if event.content.parts and event.content.parts[0].text:
                     v_output += event.content.parts[0].text
                 
-        print(f"Verifier Raw Output: {v_output}")
+        AgentLogger().emit_event("Verifier", "Raw Output Received", v_output)
         
         try:
             # ADK single_turn with output_schema guarantees JSON string
@@ -125,27 +136,32 @@ async def main():
             reason = v_json.get("reason")
             constraint = v_json.get("constraint")
         except json.JSONDecodeError:
-            print("Failed to parse Verifier output as JSON.")
+            AgentLogger().emit_event("System", "Error", "Failed to parse Verifier output as JSON.")
             decision = "REJECT"
             reason = "Failed to parse JSON"
             constraint = "Return valid JSON"
             
-        print(f"\nVerifier Decision: {decision}")
-        print(f"Reason: {reason}")
-        if constraint:
-            print(f"Constraint: {constraint}")
+        AgentLogger().emit_event("Verifier", f"Decision: {decision}", f"Reason: {reason} | Constraint: {constraint}")
             
         if decision == "APPROVE":
-            print("\nFinal Plan Approved!")
+            AgentLogger().emit_event("System", "Success", "Final Plan Approved!")
             break
         else:
-            print(f"\nPlan Rejected. Retrying...")
+            AgentLogger().emit_event("System", "Retry Triggered", "Plan Rejected. Retrying...")
             msg_text = f"The previous plan was REJECTED by the verifier.\nReason: {reason}\nCONSTRAINT FOR NEXT ITERATION: {constraint}\nCRITICAL: You MUST explicitly output a revised rerouting and signal timing plan that STRICTLY follows this constraint. Do NOT provide ambiguous advice or suspend routes without concrete detours. Specify exact alternative routes."
             current_attempt += 1
             
     if current_attempt > max_retries:
-        print("\n=== MAX RETRIES REACHED ===")
-        print("Unable to verify safe plan. The system failed to find an acceptable response within the retry limit.")
-        
+        AgentLogger().emit_event("System", "Timeout", "Exceeded maximum retries. Proceeding with last available plan.")
+
+    AgentLogger().print_total()
+
+async def main():
+    if len(sys.argv) < 2:
+        print("Usage: python agent.py <incident_description>")
+        sys.exit(1)
+    incident_desc = sys.argv[1]
+    await run_incident_response(incident_desc)
+
 if __name__ == "__main__":
     asyncio.run(main())

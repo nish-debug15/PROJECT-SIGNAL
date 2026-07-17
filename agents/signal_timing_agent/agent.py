@@ -2,7 +2,7 @@ import os
 import sys
 from dotenv import load_dotenv
 from google.adk.agents import Agent
-from agents.mock_llm import MockLlm
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from mcp import StdioServerParameters
 
@@ -21,7 +21,10 @@ mcp_toolset = McpToolset(
 
 signal_timing_agent = Agent(
     name="signal_timing_agent",
-    model=MockLlm(),
+    model=LiteLlm(
+        model="openrouter/google/gemini-2.5-flash",
+        max_tokens=512,
+    ),
     description="An agent to adjust signal timings to alleviate traffic congestion.",
     instruction=(
         "You are the Signal Timing Agent for the SIGNAL multi-agent traffic response system. "
