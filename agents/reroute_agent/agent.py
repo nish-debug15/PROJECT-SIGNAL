@@ -19,12 +19,20 @@ mcp_toolset = McpToolset(
     tool_filter=["get_gtfs_routes", "get_junction_signal_state", "list_zones"]
 )
 
-root_agent = Agent(
-    name="reroute_agent",
-    model=LiteLlm(
+USE_REAL_LLM = False
+
+if USE_REAL_LLM:
+    llm_model = LiteLlm(
         model="openrouter/google/gemini-2.5-flash",
         max_tokens=512,
-    ),
+    )
+else:
+    from agents.mock_llm import MockLlm
+    llm_model = MockLlm()
+
+root_agent = Agent(
+    name="reroute_agent",
+    model=llm_model,
     description="An agent to reroute traffic during incidents.",
     instruction=(
         "You are the Reroute Agent for the SIGNAL multi-agent traffic response system. "

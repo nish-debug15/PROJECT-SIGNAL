@@ -27,12 +27,20 @@ mcp_toolset = McpToolset(
     tool_filter=["get_junction_signal_state", "get_gtfs_routes"]
 )
 
-verifier_agent = Agent(
-    name="verifier_agent",
-    model=LiteLlm(
+USE_REAL_LLM = False
+
+if USE_REAL_LLM:
+    llm_model = LiteLlm(
         model="openrouter/google/gemini-2.5-flash",
         max_tokens=512,
-    ),
+    )
+else:
+    from agents.mock_llm import MockLlm
+    llm_model = MockLlm()
+
+verifier_agent = Agent(
+    name="verifier_agent",
+    model=llm_model,
     description="Verifier agent to check plans against constraints.",
     instruction=(
         "You are the Verifier Agent for the SIGNAL multi-agent traffic response system. "

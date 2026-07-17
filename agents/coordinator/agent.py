@@ -30,13 +30,21 @@ parallel_execution_agent = ParallelAgent(
     description="Executes Reroute and Signal-Timing agents in parallel."
 )
 
+USE_REAL_LLM = False
+
+if USE_REAL_LLM:
+    llm_model = LiteLlm(
+        model="openrouter/google/gemini-2.5-flash",
+        max_tokens=512,
+    )
+else:
+    from agents.mock_llm import MockLlm
+    llm_model = MockLlm()
+
 # Step 2: Coordinator LLM Agent
 coordinator_llm_agent = Agent(
     name="coordinator_llm",
-    model=LiteLlm(
-        model="openrouter/google/gemini-2.5-flash",
-        max_tokens=512,
-    ),
+    model=llm_model,
     description="Coordinator agent to merge outputs from Reroute and Signal-Timing agents.",
     instruction=(
         "You are the Coordinator Agent for the SIGNAL multi-agent traffic response system. "
