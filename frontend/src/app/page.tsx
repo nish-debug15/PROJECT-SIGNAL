@@ -11,6 +11,12 @@ export default function Home() {
   const [isTriggering, setIsTriggering] = useState(false);
 
   const handleTrigger = async () => {
+    const defaultIncident = "CRITICAL: Waterlogging at Koramangala Water Tank Junction";
+    const incidentDesc = window.prompt("Enter incident description:", defaultIncident);
+    
+    // If the user clicks Cancel or enters an empty string, abort
+    if (!incidentDesc) return;
+
     setIsTriggering(true);
     try {
       // Intelligently derive the API URL from the existing WebSocket environment variable
@@ -20,7 +26,7 @@ export default function Home() {
       await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ incident_desc: "CRITICAL: Waterlogging at Koramangala Water Tank Junction" })
+        body: JSON.stringify({ incident_desc: incidentDesc })
       });
     } catch (err) {
       console.error("Failed to trigger incident", err);

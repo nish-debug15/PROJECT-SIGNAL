@@ -25,7 +25,7 @@ class MockLlm(BaseLlm):
         if "proposed plan:" in full_lower:
             # Verifier
             if "outer ring road" in full_lower:
-                response_text = json.dumps({"decision": "APPROVE", "reason": "Looks good", "constraint": ""})
+                response_text = json.dumps({"decision": "APPROVE", "reason": "Looks good", "constraint": "N/A"})
             else:
                 response_text = json.dumps({
                     "decision": "REJECT",
