@@ -76,8 +76,11 @@ async def run_incident_response(incident_desc: str):
         session_service=session_service
     )
     
+    import uuid
+    run_id = f"demo_user_{uuid.uuid4().hex[:8]}"
+    
     # Create session
-    session = await runner.session_service.create_session(app_name="coordinator_app", user_id="cli_user")
+    session = await runner.session_service.create_session(app_name="coordinator_app", user_id=run_id)
     
     max_retries = 3
     current_attempt = 1
@@ -89,7 +92,7 @@ async def run_incident_response(incident_desc: str):
         AgentLogger().emit_event("System", f"Attempt {current_attempt}", f"Starting attempt {current_attempt} of {max_retries}")
         
         # We must clear the agent states in the session to ensure the SequentialAgent and its sub-agents run again
-        session = await runner.session_service.get_session(app_name="coordinator_app", user_id="cli_user", session_id=session.id)
+        session = await runner.session_service.get_session(app_name="coordinator_app", user_id=run_id, session_id=session.id)
         if "_adk_agent_states" in session.state:
             del session.state["_adk_agent_states"]
         if "_adk_end_of_agents" in session.state:
@@ -100,7 +103,7 @@ async def run_incident_response(incident_desc: str):
         plan_output = ""
         user_msg = types.Content(role="user", parts=[types.Part.from_text(text=msg_text)])
         
-        async for event in runner.run_async(user_id="cli_user", session_id=session.id, new_message=user_msg):
+        async for event in runner.run_async(user_id=run_id, session_id=session.id, new_message=user_msg):
             if hasattr(event, "model_response") and getattr(event, "model_response", None) and getattr(event.model_response, "usage_metadata", None):
                 md = event.model_response.usage_metadata
                 AgentLogger().log_call(event.author, getattr(md, "prompt_token_count", 0) or 0, getattr(md, "candidates_token_count", 0) or 0)
@@ -121,12 +124,12 @@ async def run_incident_response(incident_desc: str):
             agent=verifier_agent,
             session_service=InMemorySessionService()
         )
-        v_session = await verifier_runner.session_service.create_session(app_name="verifier_app", user_id="cli_user")
+        v_session = await verifier_runner.session_service.create_session(app_name="verifier_app", user_id=run_id)
         
         verifier_input = types.Content(role="user", parts=[types.Part.from_text(text=f"Incident: {incident_desc}\n\nProposed Plan:\n{plan_output}")])
         
         v_output = ""
-        async for event in verifier_runner.run_async(user_id="cli_user", session_id=v_session.id, new_message=verifier_input):
+        async for event in verifier_runner.run_async(user_id=run_id, session_id=v_session.id, new_message=verifier_input):
             if hasattr(event, "model_response") and getattr(event, "model_response", None) and getattr(event.model_response, "usage_metadata", None):
                 md = event.model_response.usage_metadata
                 AgentLogger().log_call(event.author, getattr(md, "prompt_token_count", 0) or 0, getattr(md, "candidates_token_count", 0) or 0)
