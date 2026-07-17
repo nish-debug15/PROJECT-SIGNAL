@@ -31,7 +31,7 @@ USE_REAL_LLM = False
 
 if USE_REAL_LLM:
     llm_model = LiteLlm(
-        model="groq/llama3-70b-8192",
+        model="groq/llama-3.1-8b-instant",
         max_tokens=512,
     )
 else:
