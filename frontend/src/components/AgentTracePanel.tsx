@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 type TraceState = 'active' | 'approve' | 'reject' | 'retry' | 'default';
 
@@ -12,86 +12,106 @@ interface TraceEntry {
   state: TraceState;
 }
 
-const mockTraceStream: TraceEntry[] = [
-  {
-    id: '1',
-    agent: 'SYSTEM',
-    timestamp: '19:30:05',
-    content: 'INCIDENT INJECTED: Koramangala waterlogging critical at Koramangala Water Tank Junction (J-KRM-01).',
-    state: 'active'
-  },
-  {
-    id: '2',
-    agent: 'COORDINATOR',
-    timestamp: '19:30:06',
-    content: 'Delegating to RerouteAgent and SignalTimingAgent...',
-    state: 'default'
-  },
-  {
-    id: '3',
-    agent: 'REROUTE_AGENT',
-    timestamp: '19:30:12',
-    content: 'PROPOSED: Divert Route 201R and 340 away from Koramangala. Alternative route via Silk Board Junction (J-SB-01) to bypass waterlogged area.',
-    state: 'default'
-  },
-  {
-    id: '4',
-    agent: 'SIGNAL_TIMING_AGENT',
-    timestamp: '19:30:14',
-    content: 'PROPOSED: J-KRM-01 adjustments:\n- ST Bed Road: Green 10s (was 20s)\n- 80ft Road North/South: Green 35s (was 30s)',
-    state: 'default'
-  },
-  {
-    id: '5',
-    agent: 'COORDINATOR',
-    timestamp: '19:30:18',
-    content: 'Synthesized preliminary plan. Awaiting verification.',
-    state: 'default'
-  },
-  {
-    id: '6',
-    agent: 'VERIFIER',
-    timestamp: '19:30:25',
-    content: 'DECISION: REJECT\nREASON: The proposed plan suggests rerouting traffic via Silk Board, which is currently experiencing critical congestion. This would exacerbate existing traffic problems at Silk Board.\nCONSTRAINT: Avoid rerouting traffic through Silk Board Junction when its congestion level is critical.',
-    state: 'reject'
-  },
-  {
-    id: '7',
-    agent: 'COORDINATOR',
-    timestamp: '19:30:26',
-    content: 'Plan rejected by verifier. Re-triggering generation with new constraints.',
-    state: 'retry'
-  },
-  {
-    id: '8',
-    agent: 'REROUTE_AGENT',
-    timestamp: '19:30:35',
-    content: 'REVISED: Suspend Route 201R/340 through Koramangala. Direct commuters to board 500D from Indiranagar. Explicitly bypass Silk Board (J-SB-01).',
-    state: 'default'
-  },
-  {
-    id: '9',
-    agent: 'VERIFIER',
-    timestamp: '19:30:42',
-    content: 'DECISION: APPROVE\nREASON: Plan successfully addresses waterlogging by reducing J-KRM-01 inflow. Rerouting avoids critically congested Silk Board Junction.',
-    state: 'approve'
-  }
-];
-
 export default function AgentTracePanel() {
+  const [traceStream, setTraceStream] = useState<TraceEntry[]>([]);
+  const streamEndRef = useRef<HTMLDivElement>(null);
+  const queueRef = useRef<TraceEntry[]>([]);
+  const isProcessingRef = useRef(false);
+
+  useEffect(() => {
+    streamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [traceStream]);
+
+  useEffect(() => {
+    // Determine WebSocket URL based on current host if not strictly localhost, 
+    // but the backend is fixed at 8080 according to api/main.py
+    const ws = new WebSocket('ws://localhost:8080/ws/logs');
+
+    const processQueue = async () => {
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+
+      while (queueRef.current.length > 0) {
+        const entry = queueRef.current.shift()!;
+        
+        setTraceStream((prev) => [...prev, entry]);
+        
+        // Let it breathe on important events to ensure the UI doesn't rush past the demo beat
+        if (entry.state === 'reject') {
+          await new Promise(resolve => setTimeout(resolve, 4000));
+        } else if (entry.state === 'retry') {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } else if (entry.state === 'approve') {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } else {
+          // Standard artificial delay for MockLLM rapid fire events
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      }
+
+      isProcessingRef.current = false;
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        let state: TraceState = 'default';
+        let content = `${data.action}`;
+        if (data.data) {
+           content += `\n${data.data}`;
+        }
+        
+        if (data.action === 'Started Incident Response') {
+            state = 'active';
+        } else if (data.agent === 'Verifier' && data.action === 'Decision: REJECT') {
+            state = 'reject';
+        } else if (data.agent === 'Verifier' && data.action === 'Decision: APPROVE') {
+            state = 'approve';
+        } else if (data.agent === 'System' && data.action === 'Retry Triggered') {
+            state = 'retry';
+        }
+        
+        const newEntry: TraceEntry = {
+          id: Math.random().toString(36).substring(7),
+          agent: data.agent.toUpperCase(),
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          content: content,
+          state: state
+        };
+
+        queueRef.current.push(newEntry);
+        processQueue();
+      } catch (err) {
+        console.error("Failed to parse ws message", err);
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
   return (
     <div className="trace-panel">
       <div className="trace-header">
         Live Agent Trace
       </div>
       <div className="trace-stream mono">
-        {mockTraceStream.map((entry) => (
+        {traceStream.length === 0 && (
+          <div className="trace-entry state-default">
+            <div className="trace-content" style={{ opacity: 0.5, fontStyle: 'italic' }}>
+              Waiting for incoming agent trace stream...
+            </div>
+          </div>
+        )}
+        {traceStream.map((entry) => (
           <div key={entry.id} className={`trace-entry state-${entry.state}`}>
             <div className="trace-entry-header">
               <span className="trace-agent-name">{entry.agent}</span>
               <span className="trace-timestamp">{entry.timestamp}</span>
             </div>
-            <div className="trace-content">
+            <div className="trace-content" style={{ whiteSpace: 'pre-wrap' }}>
               {entry.content}
             </div>
             {entry.state !== 'default' && entry.state !== 'active' && (
@@ -106,6 +126,7 @@ export default function AgentTracePanel() {
             )}
           </div>
         ))}
+        <div ref={streamEndRef} />
       </div>
     </div>
   );
