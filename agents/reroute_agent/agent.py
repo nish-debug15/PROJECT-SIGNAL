@@ -19,16 +19,13 @@ mcp_toolset = McpToolset(
     tool_filter=["get_gtfs_routes", "get_junction_signal_state", "list_zones"]
 )
 
-USE_REAL_LLM = False
+from google.adk.models.google_llm import Gemini
+from agents.reliable_llm import ReliableLlm
+from agents.mock_llm import MockLlm
 
-if USE_REAL_LLM:
-    llm_model = LiteLlm(
-        model="groq/llama-3.1-8b-instant",
-        max_tokens=512,
-    )
-else:
-    from agents.mock_llm import MockLlm
-    llm_model = MockLlm()
+real_model = Gemini(model="gemini-2.5-flash")
+mock_model = MockLlm()
+llm_model = ReliableLlm(real_model=real_model, mock_model=mock_model, agent_name="[Reroute]")
 
 root_agent = Agent(
     name="reroute_agent",

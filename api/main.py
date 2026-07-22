@@ -24,6 +24,10 @@ app.add_middleware(
 class IncidentRequest(BaseModel):
     incident_desc: str
 
+@app.get("/health")
+async def health():
+    return {"status": "OK"}
+
 @app.post("/api/incident")
 async def trigger_incident(req: IncidentRequest):
     # Run the coordinator flow as a background task

@@ -14,6 +14,7 @@ interface TraceEntry {
 
 export default function AgentTracePanel() {
   const [traceStream, setTraceStream] = useState<TraceEntry[]>([]);
+  const [runMode, setRunMode] = useState<'LIVE' | 'SIMULATED' | null>(null);
   const streamEndRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<TraceEntry[]>([]);
   const isProcessingRef = useRef(false);
@@ -61,6 +62,13 @@ export default function AgentTracePanel() {
         if (data.data) {
            content += `\n${data.data}`;
         }
+
+        // Mode detection
+        if (data.action.includes('Mode') && data.data === 'LIVE') {
+            setRunMode(prev => prev === 'SIMULATED' ? 'SIMULATED' : 'LIVE');
+        } else if (data.action.includes('Mode') && data.data.includes('SIMULATED')) {
+            setRunMode('SIMULATED');
+        }
         
         if (data.action === 'Started Incident Response') {
             state = 'active';
@@ -94,8 +102,14 @@ export default function AgentTracePanel() {
 
   return (
     <div className="trace-panel">
-      <div className="trace-header">
-        Live Agent Trace
+      <div className="trace-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Live Agent Trace</span>
+        {runMode && (
+          <span className={`run-mode-badge ${runMode === 'LIVE' ? 'badge-live' : 'badge-simulated'}`} 
+                style={{ fontSize: '0.7em', padding: '2px 8px', borderRadius: '4px', background: runMode === 'LIVE' ? '#0f4c2e' : '#6b4c12', color: runMode === 'LIVE' ? '#4ade80' : '#facc15', border: `1px solid ${runMode === 'LIVE' ? '#4ade80' : '#facc15'}` }}>
+            MODE: {runMode}
+          </span>
+        )}
       </div>
       <div className="trace-stream mono">
         {traceStream.length === 0 && (

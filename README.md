@@ -20,7 +20,7 @@ Given a live incident, SIGNAL:
 4. If verification fails, rejects the plan with a reason and forces the coordinator to retry with that constraint
 5. Only then pushes the plan to the dashboard
 
-The retry loop is the core differentiator. Most agent demos are single-shot LLM calls wearing a UI. SIGNAL is a graph of agents that can catch and correct its own mistakes, visibly, in front of the judges.
+The retry loop is the core differentiator. Most agent demos are single-shot LLM calls wearing a UI. SIGNAL is a graph of agents that can catch and correct its own mistakes autonomously.
 
 ## Architecture
 
@@ -62,7 +62,7 @@ Built on **ADK 2.0** Workflow runtime (graph-based execution) + Collaborative Wo
 
 Next.js dashboard with two panels:
 - **Map view** — static visual representation of the incident location, proposed reroutes, and affected junctions.
-- **Agent trace panel** — live websocket stream showing every agent call, its output, and the verifier's rejection + retry loop. This panel is what sells the demo.
+- **Agent trace panel** — live websocket stream showing every agent call, its output, and the verifier's rejection + retry loop.
 
 ## Tech Stack
 

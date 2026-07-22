@@ -30,16 +30,13 @@ parallel_execution_agent = ParallelAgent(
     description="Executes Reroute and Signal-Timing agents in parallel."
 )
 
-USE_REAL_LLM = False
+from google.adk.models.google_llm import Gemini
+from agents.reliable_llm import ReliableLlm
+from agents.mock_llm import MockLlm
 
-if USE_REAL_LLM:
-    llm_model = LiteLlm(
-        model="groq/llama-3.1-8b-instant",
-        max_tokens=512,
-    )
-else:
-    from agents.mock_llm import MockLlm
-    llm_model = MockLlm()
+real_model = Gemini(model="gemini-2.5-flash")
+mock_model = MockLlm()
+llm_model = ReliableLlm(real_model=real_model, mock_model=mock_model, agent_name="[Coordinator]")
 
 # Step 2: Coordinator LLM Agent
 coordinator_llm_agent = Agent(
