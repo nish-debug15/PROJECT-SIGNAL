@@ -99,10 +99,4 @@ signal/
 └── README.md
 ```
 
-## Demo Script (4 minutes)
 
-1. **[0:00–0:30]** Problem framing — one slide, no more. Emphasize that existing tools *show* traffic, but SIGNAL *solves* it autonomously.
-2. **[0:30–1:30]** Open the scenario picker and trigger a real incident live (e.g. Waterlogging at Koramangala Water Tank Junction).
-3. **[1:30–2:30]** Point to the **Agent Trace Panel**. Explain how the Coordinator delegated to Reroute + Signal-Timing agents in parallel. 
-4. **[2:30–3:15]** Show the Verifier catching a second-order bottleneck and rejecting the first plan — *this is the "wow" moment, let it breathe.*
-5. **[3:15–4:00]** Watch the trace panel show the retry loop succeed. Show the map dynamically updating to reveal the green dashed **Approved Reroute** line. Close with future plans (real sensor integration, multi-city).
