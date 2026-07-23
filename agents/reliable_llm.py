@@ -10,6 +10,10 @@ class ReliableLlm(BaseLlm):
     mock_model: BaseLlm
     agent_name: str
 
+    def model_post_init(self, __context) -> None:
+        # Forward the real model's identifier so ADK routes correctly
+        self.model = self.real_model.model
+
     async def generate_content_async(
         self, llm_request: LlmRequest, stream: bool = False
     ) -> AsyncGenerator[LlmResponse, None]:

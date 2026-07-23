@@ -14,9 +14,10 @@ interface TraceEntry {
 
 interface AgentTracePanelProps {
   runCounter: number;
+  onApproved?: () => void;
 }
 
-export default function AgentTracePanel({ runCounter }: AgentTracePanelProps) {
+export default function AgentTracePanel({ runCounter, onApproved }: AgentTracePanelProps) {
   const [traceStream, setTraceStream] = useState<TraceEntry[]>([]);
   const [runMode, setRunMode] = useState<'LIVE' | 'SIMULATED' | null>(null);
   const streamEndRef = useRef<HTMLDivElement>(null);
@@ -104,6 +105,7 @@ export default function AgentTracePanel({ runCounter }: AgentTracePanelProps) {
           state = 'reject';
         } else if (data.agent === 'Verifier' && data.action === 'Decision: APPROVE') {
           state = 'approve';
+          onApproved?.();
         } else if (data.agent === 'System' && data.action === 'Retry Triggered') {
           state = 'retry';
         }

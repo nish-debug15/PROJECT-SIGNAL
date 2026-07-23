@@ -18,11 +18,11 @@ mcp_toolset = McpToolset(
     tool_filter=["get_junction_signal_state", "get_gtfs_routes", "list_junctions"]
 )
 
-from google.adk.models.google_llm import Gemini
+from google.adk.models.lite_llm import LiteLlm
 from agents.reliable_llm import ReliableLlm
 from agents.mock_llm import MockLlm
 
-real_model = Gemini(model="gemini-2.5-flash")
+real_model = LiteLlm(model="openrouter/google/gemini-2.5-flash", max_tokens=512)
 mock_model = MockLlm()
 llm_model = ReliableLlm(real_model=real_model, mock_model=mock_model, agent_name="[Signal Timing]")
 
