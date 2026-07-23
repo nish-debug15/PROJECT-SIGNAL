@@ -8,7 +8,6 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 from google.genai import types
 from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
 from google.adk.agents.parallel_agent import ParallelAgent
 from google.adk.agents.sequential_agent import SequentialAgent
 from google.adk.runners import Runner

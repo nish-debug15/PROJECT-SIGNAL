@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 
 type TraceState = 'active' | 'approve' | 'reject' | 'retry' | 'default';
 
@@ -12,21 +12,42 @@ interface TraceEntry {
   state: TraceState;
 }
 
-export default function AgentTracePanel() {
+interface AgentTracePanelProps {
+  runCounter: number;
+}
+
+export default function AgentTracePanel({ runCounter }: AgentTracePanelProps) {
   const [traceStream, setTraceStream] = useState<TraceEntry[]>([]);
   const [runMode, setRunMode] = useState<'LIVE' | 'SIMULATED' | null>(null);
   const streamEndRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<TraceEntry[]>([]);
   const isProcessingRef = useRef(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Clear trace when a new run is triggered
+  useEffect(() => {
+    if (runCounter > 0) {
+      setTraceStream([]);
+      setRunMode(null);
+      queueRef.current = [];
+      isProcessingRef.current = false;
+    }
+  }, [runCounter]);
+
+  // Auto-scroll to bottom
   useEffect(() => {
     streamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [traceStream]);
 
-  useEffect(() => {
-    // Determine WebSocket URL based on env (Vercel) or fallback to localhost
+  const connectWebSocket = useCallback(() => {
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080/ws/logs';
+
+    // Avoid duplicate connections
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+
     const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
 
     const processQueue = async () => {
       if (isProcessingRef.current) return;
@@ -34,10 +55,10 @@ export default function AgentTracePanel() {
 
       while (queueRef.current.length > 0) {
         const entry = queueRef.current.shift()!;
-        
+
         setTraceStream((prev) => [...prev, entry]);
-        
-        // Let it breathe on important events to ensure the UI doesn't rush past the demo beat
+
+        // Pacing delays for presentation readability
         if (entry.state === 'reject') {
           await new Promise(resolve => setTimeout(resolve, 4000));
         } else if (entry.state === 'retry') {
@@ -45,7 +66,6 @@ export default function AgentTracePanel() {
         } else if (entry.state === 'approve') {
           await new Promise(resolve => setTimeout(resolve, 2000));
         } else {
-          // Standard artificial delay for MockLLM rapid fire events
           await new Promise(resolve => setTimeout(resolve, 800));
         }
       }
@@ -56,30 +76,38 @@ export default function AgentTracePanel() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
+
+        // Mode detection — update badge but don't render as a trace entry
+        if (data.action && data.action.includes('Mode')) {
+          if (data.data === 'LIVE') {
+            setRunMode(prev => prev === 'SIMULATED' ? 'SIMULATED' : 'LIVE');
+          } else if (data.data && data.data.includes('SIMULATED')) {
+            setRunMode('SIMULATED');
+          }
+          return; // Don't add mode events to the visible stream
+        }
+
+        // Filter out internal error noise from the trace
+        if (data.action && data.action.includes('Error') && data.agent === 'System') {
+          return;
+        }
+
         let state: TraceState = 'default';
         let content = `${data.action}`;
         if (data.data) {
-           content += `\n${data.data}`;
+          content += `\n${data.data}`;
         }
 
-        // Mode detection
-        if (data.action.includes('Mode') && data.data === 'LIVE') {
-            setRunMode(prev => prev === 'SIMULATED' ? 'SIMULATED' : 'LIVE');
-        } else if (data.action.includes('Mode') && data.data.includes('SIMULATED')) {
-            setRunMode('SIMULATED');
-        }
-        
         if (data.action === 'Started Incident Response') {
-            state = 'active';
+          state = 'active';
         } else if (data.agent === 'Verifier' && data.action === 'Decision: REJECT') {
-            state = 'reject';
+          state = 'reject';
         } else if (data.agent === 'Verifier' && data.action === 'Decision: APPROVE') {
-            state = 'approve';
+          state = 'approve';
         } else if (data.agent === 'System' && data.action === 'Retry Triggered') {
-            state = 'retry';
+          state = 'retry';
         }
-        
+
         const newEntry: TraceEntry = {
           id: Math.random().toString(36).substring(7),
           agent: data.agent.toUpperCase(),
@@ -95,19 +123,43 @@ export default function AgentTracePanel() {
       }
     };
 
-    return () => {
+    ws.onclose = () => {
+      wsRef.current = null;
+      // Reconnect after 3 seconds
+      reconnectTimerRef.current = setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = () => {
       ws.close();
     };
   }, []);
+
+  useEffect(() => {
+    connectWebSocket();
+
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close();
+    };
+  }, [connectWebSocket]);
 
   return (
     <div className="trace-panel">
       <div className="trace-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>Live Agent Trace</span>
         {runMode && (
-          <span className={`run-mode-badge ${runMode === 'LIVE' ? 'badge-live' : 'badge-simulated'}`} 
-                style={{ fontSize: '0.7em', padding: '2px 8px', borderRadius: '4px', background: runMode === 'LIVE' ? '#0f4c2e' : '#6b4c12', color: runMode === 'LIVE' ? '#4ade80' : '#facc15', border: `1px solid ${runMode === 'LIVE' ? '#4ade80' : '#facc15'}` }}>
-            MODE: {runMode}
+          <span
+            className="run-mode-badge"
+            style={{
+              fontSize: '0.7em',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              background: runMode === 'LIVE' ? '#0f4c2e' : '#6b4c12',
+              color: runMode === 'LIVE' ? '#4ade80' : '#facc15',
+              border: `1px solid ${runMode === 'LIVE' ? '#4ade80' : '#facc15'}`,
+            }}
+          >
+            {runMode === 'LIVE' ? '● LIVE' : '◌ SIMULATED'}
           </span>
         )}
       </div>
@@ -115,7 +167,7 @@ export default function AgentTracePanel() {
         {traceStream.length === 0 && (
           <div className="trace-entry state-default">
             <div className="trace-content" style={{ opacity: 0.5, fontStyle: 'italic' }}>
-              Waiting for incoming agent trace stream...
+              Select an incident scenario to begin agent trace...
             </div>
           </div>
         )}
@@ -128,14 +180,9 @@ export default function AgentTracePanel() {
             <div className="trace-content" style={{ whiteSpace: 'pre-wrap' }}>
               {entry.content}
             </div>
-            {entry.state !== 'default' && entry.state !== 'active' && (
+            {(entry.state === 'reject' || entry.state === 'approve' || entry.state === 'retry' || entry.state === 'active') && (
               <span className={`trace-status-badge badge-${entry.state}`}>
-                {entry.state.toUpperCase()}
-              </span>
-            )}
-            {entry.state === 'active' && (
-              <span className={`trace-status-badge badge-${entry.state}`}>
-                ACTIVE
+                {entry.state === 'active' ? 'ACTIVE' : entry.state.toUpperCase()}
               </span>
             )}
           </div>

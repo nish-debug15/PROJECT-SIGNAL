@@ -5,7 +5,6 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from mcp import StdioServerParameters
 

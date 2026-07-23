@@ -154,3 +154,98 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   background-color: #000;
 }
+
+/* Trigger Button */
+.trigger-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 12px 24px;
+  background-color: #EF4444;
+  color: white;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(239,68,68,0.5);
+  transition: all 0.2s ease;
+}
+
+.trigger-btn:hover {
+  box-shadow: 0 0 25px rgba(239,68,68,0.7);
+  transform: translateY(-1px);
+}
+
+.trigger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Scenario Picker Panel */
+.scenario-panel {
+  position: absolute;
+  top: 70px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(15, 17, 21, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 320px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.scenario-panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.scenario-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.scenario-btn:last-child {
+  border-bottom: none;
+}
+
+.scenario-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.scenario-label {
+  flex: 1;
+}
+
+/* Incident type colored dots */
+.scenario-type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.type-waterlogging { background: #3B82F6; }
+.type-accident { background: #EF4444; }
+.type-signal_failure { background: #F59E0B; }
+.type-vip_movement { background: #A855F7; }
+.type-construction { background: #F97316; }
+

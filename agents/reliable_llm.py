@@ -1,4 +1,3 @@
-import asyncio
 from typing import AsyncGenerator
 from google.adk.models.base_llm import BaseLlm
 from google.adk.models.llm_request import LlmRequest
